@@ -1,0 +1,10 @@
+import numpy as np
+import matplotlib.pyplot as plt
+# ### Patterns & Geometries
+
+def wave(position, Amplitude):
+    t = np.arange(0.0, 100., 0.01)
+    X = t + position[0]
+    Y = Amplitude*np.sin(2/20*np.pi*t) + position[1]
+    
+    return X, Y
