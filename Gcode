@@ -1,46 +1,65 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Dec 25 16:08:29 2017
+#import numpy as np
+## ### Patterns & Geometries
+#
+#def wave(position, Amplitude):
+#    t = np.arange(0.0, 100., 0.01)
+#    X = t + position[0]
+#    Y = Amplitude*np.sin(2/20*np.pi*t) + position[1]
+#    
+#    return X, Y
 
-@author: Hayk Vasilyan
-"""
-# coding: utf-8
-# ### 1. Load the Modules
+#import turtle as tl
+#import math as mh
+#import matplotlib.pyplot as plt
+#
+#length = 25
+#angle = 30
+#n = 12
+#t = 2
+#r = 10
+#
+#def p_line(t, n, length, angle):
+#    """Draws n line segments.""".
+#    for i in range(n):
+#        tl.forward(length)
+#        tl.left(angle)
+#        
+#def arc(t, r, angle):
+#    """Draws an arc with the given radius and angle."""
+#    arc_length = 2 * mh.pi * r * abs(angle) / 720
+#    n = int(arc_length / 2) + 2
+#    step_length = arc_length / n
+#    step_angle = float(angle) / n
+#    
+#    # Before starting reduces, making a slight left turn.
+#    tl.left(step_angle/2)
+#    p_line(t, n, step_length, step_angle)
+#    tl.right(step_angle/2)
+#    
+#line = p_line(t, n,length,angle)    
+#        
+#arcc = arc(t, r, angle)
+
+import turtle as tl
 import numpy as np
-import matplotlib.pyplot as plt
 import os
-import geometries as geo
-# ### 2. Initial Parameters
-# Diameter of the Nozzle
+import matplotlib.pyplot as plt
+
+n_layeres = 5
 d_nozzle = 0.35
-# Set Initial X,Y,Z Possition
-position = [0, 0, 0.5]
-# Feed-rate / Speed
-F = 1000
-# Dimensions
-length = 80
-height = 80
-# Temperature of the Nozzle
-Temp_C = 220
-# Number of layers
-n_layeres = 1
-# Layer height
 h_layer = d_nozzle/2
-# Initial extrusion
-E = 10
-# Extrusion Area
+
+F = 1000
+Z = 0.5
 A = (d_nozzle / 2) ** 2 * np.pi
-# ### 3. Create file with Start Commands
-#####################
-#    Create file    #
-#####################
-# Get your current Directory
+E = 10
+Temp_C = 220
+
 path = str(os.getcwd())
 file = path + '\LAB-3.gcode'
 f = open(file, "w+")
-#####################
-#    START CODE     #
-#####################
+
+
 f.writelines("G21 ; set units to millimeters\n")
 f.writelines("G90 ; use absolute coordinates\n")
 f.writelines("M82 ; use absolute distances for extrusion\n")
@@ -50,6 +69,42 @@ f.writelines("M109 S%.3f ; set temperature \n" % (Temp_C))
 f.writelines("G92 E0 ; zero the extruded length \n")
 f.writelines("G1 X0 Y0 Z10 E%.3f ; extrude 10 mm of filament \n" % (E))
 f.writelines("G1 X50 Y50 Z10 E%.3f ; extrude 10 mm of filament \n" % (E))
+
+
+def draw(some_turtle):
+    X = []
+    Y = []
+    for i in range(1,6):
+        some_turtle.forward(200)
+        some_turtle.right(150)
+        X.append(some_turtle.xcor())
+        Y.append(some_turtle.ycor())
+#        print(X,Y)
+#        print(some_turtle.xcor())
+#        print(some_turtle.ycor())
+
+    return X,Y
+
+        
+def draw_art():
+    X1 = []
+    Y1 = []
+    window = tl.Screen()
+    brad = tl.Turtle()
+    brad.shape("classic")
+    brad.color("black")
+    brad.speed(100)
+    brad.pensize(3)
+    
+    for i in range(1,10):
+        xx,yy = draw(brad)
+        X1 = np.concatenate((X1,np.array(xx)))
+        Y1 = np.concatenate((Y1,np.array(yy)))
+        brad.right(10)
+        
+    window.exitonclick()
+    
+    return X1,Y1
 
 def gcoder(X, Y, Z, F, A, f):
     E = 0
@@ -62,38 +117,25 @@ def gcoder(X, Y, Z, F, A, f):
         E = E + (Distance * A)
         f.writelines("G1 X%.5f Y%.5f Z%.5f E%.5f \n" % (X[i+1], Y[i+1], Z, E))
 
-# ### 4. Tool-path Generation
-x_center = position[0] + length/2
-y_center = position[1] + height/2
-R = length/2
-Z = position[2]
-Amplitude = 2
-# X_rect, Y_rect = geo.rectangle(position, length, height)
-# X_rose, Y_rose = geo.rose(x_center, y_center, 6, R)
-# X_circ, Y_circ = geo.circle(x_center, y_center, R)
-X_wave1, Y_wave1 = geo.wave(position, Amplitude)
-X_wave2, Y_wave2 = X_wave1*(-1) + 2*position[0]+100 , Y_wave1
-
-X_wave, Y_wave = np.concatenate((X_wave1, X_wave2)), np.concatenate((Y_wave1, Y_wave2))
-
-plt.plot(X_wave,Y_wave)
-
-#plt.plot(X_wave1,Y_wave1)
-#plt.plot(X_wave2,Y_wave2)
-
-plt.axis("equal")
+x,y = draw_art()
+x = np.concatenate((x, [x[0]]))
+y = np.concatenate((y, [y[0]]))
+rectangle_x = [max(x), max(x), min(x), min(x), max(x)]
+rectangle_y = [min(y), max(y), max(y), min(y), min(y)]
+#print(rectangle_x)
+#print(rectangle_y)
+x = np.concatenate((rectangle_x, x))
+y = np.concatenate((rectangle_y, y))
+for i in range(n_layeres):
+    gcoder(x*0.5+50,y*0.5+90,Z,F,A,f)
+    Z += 2*h_layer
+#print(type(x))
+#print(x,y)
+plt.plot(x,y)
+plt.axis('equal')
 plt.show()
 
-for i in range(n_layeres):
-    # gcoder(X_rose, Y_rose, Z, F, A, f)
-    # gcoder(X_circ, Y_circ, Z, F, A, f)
-    gcoder(X_wave+20, Y_wave+20, Z, F, A, f) 
-    Z += h_layer
 
-# ### 5. Close The File with End codegeo
-###############################################################
-#     Default End Commands    #
-###############################################################
 f.writelines("; Finish \n")
 f.writelines("M104 S0 ; extruder heater off \n")
 f.writelines("M140 S0 ; heated bed heater off (if you have it) \n")
@@ -102,4 +144,3 @@ f.writelines("G90 ; absolute positioning \n")
 f.writelines("G1 Y150 F5000 ; move completed part out\n")
 f.writelines("M84 ; steppers off \n")
 f.close()
-#################################################################
